@@ -1,4 +1,4 @@
-name: Release — Crear release/*, probar y mezclar a master
+name: Release — Crear release/*, probar y mezclar a main (Python)
 
 on:
   push:
@@ -6,16 +6,16 @@ on:
       - develop
 
 permissions:
-  contents: write
+  contents: write # crear/mezclar ramas y push
 
 env:
-  KEYWORD_CREATE_RELEASE: "CREAR-RELEASE"
+  KEYWORD_CREATE_RELEASE: "CREAR-RELEASE" # <-- AJUSTA TU PALABRA CLAVE
 
 jobs:
-  release_to_master:
-    name: Release → Master (con pruebas)
+  release_to_main:
+    name: Release → Main (con pruebas)
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, env.KEYWORD_CREATE_RELEASE)
+    if: ${{ contains(github.event.head_commit.message, 'CREAR-RELEASE') }}
 
     steps:
       - name: Checkout
@@ -47,26 +47,33 @@ jobs:
           target-branch: ${{ steps.rel.outputs.RELEASE_BRANCH }}
           allow-ff: false
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: "20"
+          python-version: "3.11"
 
-      - name: Instalar dependencias
-        run: npm ci
-        env:
-          CI: true
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-      - name: Ejecutar pruebas
-        run: npm test --ignore-scripts
-        env:
-          CI: true
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Mezclar release → master (si pruebas pasan)
+      - name: Run tests (unittest)
+        run: |
+          python -m unittest discover -s tests -v
+
+      - name: Mezclar release → main (si pruebas pasan)
         if: ${{ success() }}
         uses: tukasz/direct-merge-action@master
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           source-branch: ${{ steps.rel.outputs.RELEASE_BRANCH }}
-          target-branch: master
+          target-branch: main
           allow-ff: false
