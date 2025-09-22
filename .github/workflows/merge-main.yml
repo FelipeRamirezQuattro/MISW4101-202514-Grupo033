@@ -1,0 +1,72 @@
+name: Release — Crear release/*, probar y mezclar a master
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+
+env:
+  KEYWORD_CREATE_RELEASE: "CREAR-RELEASE"
+
+jobs:
+  release_to_master:
+    name: Release → Master (con pruebas)
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, env.KEYWORD_CREATE_RELEASE)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Git (autor de merges)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Definir nombre de la release
+        id: rel
+        run: |
+          TS=$(date -u +"%Y%m%d-%H%M%S")
+          echo "RELEASE_BRANCH=release/${TS}" >> $GITHUB_OUTPUT
+
+      - name: Crear rama release
+        run: |
+          git checkout -b "${{ steps.rel.outputs.RELEASE_BRANCH }}"
+          git push -f -u origin "${{ steps.rel.outputs.RELEASE_BRANCH }}"
+
+      - name: Mezclar develop → ${{ steps.rel.outputs.RELEASE_BRANCH }}
+        uses: tukasz/direct-merge-action@master
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          source-branch: develop
+          target-branch: ${{ steps.rel.outputs.RELEASE_BRANCH }}
+          allow-ff: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias
+        run: npm ci
+        env:
+          CI: true
+
+      - name: Ejecutar pruebas
+        run: npm test --ignore-scripts
+        env:
+          CI: true
+
+      - name: Mezclar release → master (si pruebas pasan)
+        if: ${{ success() }}
+        uses: tukasz/direct-merge-action@master
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          source-branch: ${{ steps.rel.outputs.RELEASE_BRANCH }}
+          target-branch: master
+          allow-ff: false

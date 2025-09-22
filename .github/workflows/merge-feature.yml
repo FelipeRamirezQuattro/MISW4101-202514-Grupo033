@@ -1,0 +1,38 @@
+name: CI — Verificar pruebas tras merge a develop
+
+on:
+  pull_request:
+    branches:
+      - develop
+    types:
+      - closed
+
+permissions:
+  contents: read
+
+jobs:
+  verify-tests-on-develop:
+    name: Verificar pruebas (merge a develop)
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias
+        run: npm ci
+        env:
+          CI: true
+
+      - name: Ejecutar pruebas
+        run: npm test --ignore-scripts
+        env:
+          CI: true

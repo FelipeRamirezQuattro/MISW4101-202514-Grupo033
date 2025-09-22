@@ -1,0 +1,37 @@
+name: Validación automática de historias en la Wiki
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validar_wiki:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clonar el repositorio principal
+      uses: actions/checkout@v3
+
+    - name: Clonar la wiki (autenticación con token)
+      run: |
+        git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/MISW-4101-Practicas/MISW4101-202514-Grupo033.wiki.git wiki
+
+    - name: Instalar dependencias
+      run: |
+        pip install openai python-dotenv requests
+
+    - name: Crear archivo .env con tokens
+      run: |
+        echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+        echo "TOKEN=${{ secrets.GITHUB_TOKEN }}" >> .env
+
+    - name: Ejecutar script de validación IA
+      run: python scripts/validador_historias.py
+
+    - name: Hacer commit y push a la wiki
+      run: |
+        cd wiki
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add .
+        git diff --cached --quiet || git commit -m "✅ Revisión automática de historias con IA"
+        git push
