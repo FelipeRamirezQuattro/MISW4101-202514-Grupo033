@@ -1,4 +1,4 @@
-name: CI — Verificar pruebas tras merge a develop (Python)
+name: Verificar Pruebas en Develop
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   verify-tests-on-develop:
-    name: Verificar pruebas (merge a develop)
+    name: Verificar pruebas (en pull request a develop)
     if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
 
@@ -23,7 +23,7 @@ jobs:
           ref: develop
           fetch-depth: 0
 
-      - name: Set up Python
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -36,12 +36,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install dependencies
+      - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Si usas extras: if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
-      - name: Run tests (unittest)
+      - name: Ejecutar pruebas (unittest)
         run: |
           python -m unittest discover -s tests -v

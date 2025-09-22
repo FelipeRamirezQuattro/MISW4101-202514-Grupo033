@@ -1,21 +1,17 @@
-name: Release — Crear release/*, probar y mezclar a main (Python)
-
+name: Merge to Main (develop -> release -> main)
 on:
   push:
     branches:
       - develop
 
 permissions:
-  contents: write # crear/mezclar ramas y push
-
-env:
-  KEYWORD_CREATE_RELEASE: "CREAR-RELEASE" # <-- AJUSTA TU PALABRA CLAVE
+  contents: write
 
 jobs:
   release_to_main:
-    name: Release → Main (con pruebas)
+    name: Merge develop → release → main
     runs-on: ubuntu-latest
-    if: ${{ contains(github.event.head_commit.message, 'CREAR-RELEASE') }}
+    if: ${{ contains(github.event.head_commit.message, 'READY-FOR-RELEASE') }}
 
     steps:
       - name: Checkout
@@ -23,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configurar Git (autor de merges)
+      - name: Configurar Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -47,7 +43,7 @@ jobs:
           target-branch: ${{ steps.rel.outputs.RELEASE_BRANCH }}
           allow-ff: false
 
-      - name: Set up Python
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -60,12 +56,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install dependencies
+      - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run tests (unittest)
+      - name: Ejecutar pruebas (unittest)
         run: |
           python -m unittest discover -s tests -v
 
