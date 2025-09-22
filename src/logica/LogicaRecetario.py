@@ -66,7 +66,7 @@ class LogicaRecetario(FachadaRecetario):
         raise NotImplementedError("Método no implementado")
 
     def eliminar_receta(self, id_receta):
-        print("El id de la receta a eliminar es:", id_receta)
+        
         raise NotImplementedError("Método no implementado")
 
     def dar_ingredientes(self):
