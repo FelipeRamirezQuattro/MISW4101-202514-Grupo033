@@ -63,6 +63,7 @@ class LogicaRecetario(FachadaRecetario):
             return False
         
     def editar_receta(self, id_receta, receta, tiempo, personas, calorias, preparacion):
+        print("This is to be implemented in MAIN after actions")
         raise NotImplementedError("Método no implementado")
 
     def eliminar_receta(self, id_receta):
